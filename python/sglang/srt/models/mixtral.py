@@ -331,8 +331,8 @@ class MixtralForCausalLM(nn.Module):
         input_embeds: torch.Tensor = None,
     ) -> torch.Tensor:
         results_dict = {}
-        results_dict["inputs"] = input_ids.cpu().data.numpy()
         hidden_states, all_router_logits = self.model(input_ids, positions, forward_batch, input_embeds, output_router_logits=True)
+        results_dict["inputs"] = input_ids.cpu().data.numpy()
         results_dict["score_list"] = all_router_logits
         
         return self.logits_processor(
