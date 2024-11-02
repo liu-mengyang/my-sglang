@@ -288,7 +288,7 @@ class MixtralModel(nn.Module):
                 positions, hidden_states, forward_batch, residual
             )
             if output_router_logits:
-                all_router_logits += (router_logits.cpu().data.numpy(),)
+                all_router_logits += (router_logits.cpu().data.float().numpy(),)
         hidden_states, _ = self.norm(hidden_states, residual)
         return hidden_states, all_router_logits
 
