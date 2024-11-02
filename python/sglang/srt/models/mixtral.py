@@ -288,7 +288,7 @@ class MixtralModel(nn.Module):
                 positions, hidden_states, forward_batch, residual
             )
             if output_router_logits:
-                all_router_logits += (router_logits,)
+                all_router_logits += (router_logits.cpu().data.numpy(),)
         hidden_states, _ = self.norm(hidden_states, residual)
         return hidden_states, all_router_logits
 
@@ -333,7 +333,7 @@ class MixtralForCausalLM(nn.Module):
         results_dict = {}
         results_dict["inputs"] = input_ids.cpu().data.numpy()
         hidden_states, all_router_logits = self.model(input_ids, positions, forward_batch, input_embeds, output_router_logits=True)
-        results_dict["score_list"] = all_router_logits.cpu().data.numpy()
+        results_dict["score_list"] = all_router_logits
         
         return self.logits_processor(
             input_ids, hidden_states, self.lm_head.weight, forward_batch
