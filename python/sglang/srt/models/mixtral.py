@@ -18,6 +18,7 @@ limitations under the License.
 """Inference-only Mixtral model."""
 import copy
 import json
+import time
 from typing import Iterable, Optional, Tuple
 
 import numpy as np
@@ -304,8 +305,8 @@ class NpEncoder(json.JSONEncoder):
         return super(NpEncoder, self).default(obj)
 
 
-def save_logits(results_dict, save_file="Mixtral8x7b-cnnmails.json"):
-    json.dump(results_dict, open(save_file, 'w'), cls=NpEncoder)
+def save_logits(results_dict, save_file="Mixtral8x7b-cnnmails"):
+    json.dump(results_dict, open(save_file+f"_{str(time.time())}"+".json", 'w'), cls=NpEncoder)
 
 
 class MixtralForCausalLM(nn.Module):
