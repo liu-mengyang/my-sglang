@@ -16,6 +16,7 @@ limitations under the License.
 # Adapted from
 # https://github.com/vllm-project/vllm/blob/c7f2cf2b7f67bce5842fedfdba508440fe257375/vllm/model_executor/models/mixtral.py#L1
 """Inference-only Mixtral model."""
+import copy
 import json
 from typing import Iterable, Optional, Tuple
 
@@ -288,7 +289,7 @@ class MixtralModel(nn.Module):
                 positions, hidden_states, forward_batch, residual
             )
             if output_router_logits:
-                all_router_logits += (router_logits.cpu().data.float().numpy(),)
+                all_router_logits += (router_logits,)
         hidden_states, _ = self.norm(hidden_states, residual)
         return hidden_states, all_router_logits
 
@@ -332,8 +333,13 @@ class MixtralForCausalLM(nn.Module):
     ) -> torch.Tensor:
         results_dict = {}
         hidden_states, all_router_logits = self.model(input_ids, positions, forward_batch, input_embeds, output_router_logits=True)
-        results_dict["inputs"] = input_ids.cpu().data.numpy()
-        results_dict["score_list"] = all_router_logits
+        save_tokens = copy.deepcopy(input_ids)
+        results_dict["inputs"] = save_tokens.cpu().data.numpy()
+        save_logits = ()
+        for router_logits in all_router_logits:
+            save_logits += (router_logits.cpu().data.float().numpy(),)
+        results_dict["score_list"] = save_logits
+        
         
         return self.logits_processor(
             input_ids, hidden_states, self.lm_head.weight, forward_batch
