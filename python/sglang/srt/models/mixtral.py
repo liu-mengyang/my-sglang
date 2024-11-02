@@ -16,19 +16,16 @@ limitations under the License.
 # Adapted from
 # https://github.com/vllm-project/vllm/blob/c7f2cf2b7f67bce5842fedfdba508440fe257375/vllm/model_executor/models/mixtral.py#L1
 """Inference-only Mixtral model."""
+import json
 from typing import Iterable, Optional, Tuple
 
+import numpy as np
 import torch
 from torch import nn
 from transformers import MixtralConfig
 from vllm.distributed import get_tensor_model_parallel_world_size
 from vllm.model_executor.layers.fused_moe import FusedMoE
 from vllm.model_executor.layers.rotary_embedding import get_rope
-from vllm.model_executor.layers.vocab_parallel_embedding import (
-    DEFAULT_VOCAB_PADDING_SIZE,
-    ParallelLMHead,
-    VocabParallelEmbedding,
-)
 from vllm.model_executor.model_loader.weight_utils import default_weight_loader
 
 from sglang.srt.layers.layernorm import RMSNorm
@@ -98,7 +95,7 @@ class MixtralMoE(nn.Module):
         # router_logits: (num_tokens, n_experts)
         router_logits, _ = self.gate(hidden_states)
         final_hidden_states = self.experts(hidden_states, router_logits)
-        return final_hidden_states.view(orig_shape)
+        return final_hidden_states.view(orig_shape), router_logits
 
 
 class MixtralAttention(nn.Module):
@@ -236,8 +233,8 @@ class MixtralDecoderLayer(nn.Module):
 
         # Fully Connected
         hidden_states, residual = self.post_attention_layernorm(hidden_states, residual)
-        hidden_states = self.block_sparse_moe(hidden_states)
-        return hidden_states, residual
+        hidden_states, router_logits = self.block_sparse_moe(hidden_states)
+        return hidden_states, residual, router_logits
 
 
 class MixtralModel(nn.Module):
@@ -271,7 +268,10 @@ class MixtralModel(nn.Module):
         positions: torch.Tensor,
         forward_batch: ForwardBatch,
         input_embeds: torch.Tensor = None,
+        output_router_logits: Optional[bool] = False,
     ) -> torch.Tensor:
+        all_router_logits = () if output_router_logits else None
+        
         if input_embeds is None:
             hidden_states = self.embed_tokens(input_ids)
         else:
@@ -279,11 +279,27 @@ class MixtralModel(nn.Module):
         residual = None
         for i in range(len(self.layers)):
             layer = self.layers[i]
-            hidden_states, residual = layer(
+            hidden_states, residual, router_logits = layer(
                 positions, hidden_states, forward_batch, residual
             )
+            if output_router_logits:
+                all_router_logits += (router_logits,)
         hidden_states, _ = self.norm(hidden_states, residual)
-        return hidden_states
+        return hidden_states, all_router_logits
+
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NpEncoder, self).default(obj)
+
+
+def save_logits(results_dict, save_file="Mixtral8x7b-cnnmails.json"):
+    json.dump(results_dict, open(save_file, 'w'), cls=NpEncoder)
 
 
 class MixtralForCausalLM(nn.Module):
@@ -309,7 +325,11 @@ class MixtralForCausalLM(nn.Module):
         forward_batch: ForwardBatch,
         input_embeds: torch.Tensor = None,
     ) -> torch.Tensor:
-        hidden_states = self.model(input_ids, positions, forward_batch, input_embeds)
+        results_dict = {}
+        results_dict["inputs"] = input_ids.cpu().data.numpy()
+        hidden_states, all_router_logits = self.model(input_ids, positions, forward_batch, input_embeds, output_router_logits=True)
+        results_dict["score_list"] = all_router_logits.cpu().data.numpy()
+        
         return self.logits_processor(
             input_ids, hidden_states, self.lm_head.weight, forward_batch
         )
