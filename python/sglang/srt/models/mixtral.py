@@ -335,11 +335,11 @@ class MixtralForCausalLM(nn.Module):
         hidden_states, all_router_logits = self.model(input_ids, positions, forward_batch, input_embeds, output_router_logits=True)
         save_tokens = copy.deepcopy(input_ids)
         results_dict["inputs"] = save_tokens.cpu().data.numpy()
-        save_logits = ()
+        save_router_logits = ()
         for router_logits in all_router_logits:
-            save_logits += (router_logits.cpu().data.float().numpy(),)
-        results_dict["score_list"] = save_logits
-        
+            save_router_logits += (router_logits.cpu().data.float().numpy(),)
+        results_dict["score_list"] = save_router_logits
+        save_logits(results_dict)
         
         return self.logits_processor(
             input_ids, hidden_states, self.lm_head.weight, forward_batch
