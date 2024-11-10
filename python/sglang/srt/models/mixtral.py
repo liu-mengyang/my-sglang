@@ -48,7 +48,7 @@ from sglang.srt.layers.torchao_utils import apply_torchao_config_
 from sglang.srt.managers.schedule_batch import global_server_args_dict
 from sglang.srt.model_executor.forward_batch_info import ForwardBatch
 ########## S3 ##########
-from sglang.srt.global_var import response_dict
+import sglang.srt.global_var as gv
 ########## S3 ##########
 
 
@@ -326,20 +326,19 @@ class MixtralForCausalLM(nn.Module):
         forward_batch: ForwardBatch,
         input_embeds: torch.Tensor = None,
     ) -> torch.Tensor:
-        global response_dict
-        idx = len(response_dict)
-        response_dict[idx] = {}
+        idx = len(gv.response_dict)
+        gv.response_dict[idx] = {}
         hidden_states, all_router_logits, all_topk_ids = self.model(input_ids, positions, forward_batch, input_embeds, output_router_logits=True)
         save_tokens = copy.deepcopy(input_ids)
-        response_dict[idx]["inputs"] = save_tokens.cpu().data.numpy()
+        gv.response_dict[idx]["inputs"] = save_tokens.cpu().data.numpy()
         save_router_logits = ()
         save_topk_ids = ()
         for router_logits in all_router_logits:
             save_router_logits += (router_logits.cpu().data.float().numpy(),)
         for topk_ids in all_topk_ids:
             save_topk_ids += (topk_ids.cpu().data.float().numpy(),)
-        response_dict[idx]["scores"] = save_router_logits
-        response_dict[idx]["selections"] = save_topk_ids
+        gv.response_dict[idx]["scores"] = save_router_logits
+        gv.response_dict[idx]["selections"] = save_topk_ids
         
         return self.logits_processor(
             input_ids, hidden_states, self.lm_head.weight, forward_batch

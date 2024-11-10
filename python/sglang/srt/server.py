@@ -85,7 +85,7 @@ from sglang.srt.utils import (
 )
 from sglang.utils import get_exception_traceback
 ########## S3 ##########
-from sglang.srt.global_var import results_dict, response_dict, save_file
+import sglang.srt.global_var as gv
 from sglang.srt.utils import save_logits
 ########## S3 ##########
 
@@ -231,18 +231,16 @@ async def generate_request(obj: GenerateReqInput, request: Request):
     else:
         try:
             ########## S3 ##########
-            global results_dict
-            results_dict["prompt"] = obj.text
+            gv.results_dict["prompt"] = obj.text
             ########## S3 ##########
             ret = await tokenizer_manager.generate_request(obj, request).__anext__()
             ########## S3 ##########
-            results_dict["response"] = ret['text']
-            global response_dict
-            results_dict["data"] = response_dict
-            if len(results_dict) != 0:
-                save_logits(results_dict, save_file)
-            response_dict = {}
-            results_dict = {}
+            gv.results_dict["response"] = ret['text']
+            gv.results_dict["data"] = gv.response_dict
+            if len(gv.results_dict) != 0:
+                save_logits(gv.results_dict, gv.save_file)
+            gv.response_dict = {}
+            gv.results_dict = {}
             ########## S3 ##########
             return ret
         except ValueError as e:
