@@ -720,3 +720,21 @@ def first_rank_print(*args, **kwargs):
         print(*args, **kwargs)
     else:
         pass
+
+
+
+########## S3 ##########
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NpEncoder, self).default(obj)
+
+
+def save_logits(results_dict, save_file="Mixtral8x7b-cnnmails"):
+    json.dump(results_dict, open(save_file+".json", 'a'), cls=NpEncoder)
+########## S3 ##########

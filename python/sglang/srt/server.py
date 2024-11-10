@@ -84,6 +84,10 @@ from sglang.srt.utils import (
     set_ulimit,
 )
 from sglang.utils import get_exception_traceback
+########## S3 ##########
+from sglang.srt.global_var import results_dict, save_file
+from sglang.utils import save_logits
+########## S3 ##########
 
 logger = logging.getLogger(__name__)
 
@@ -226,7 +230,14 @@ async def generate_request(obj: GenerateReqInput, request: Request):
         )
     else:
         try:
+            ########## S3 ##########
+            save_logits(results_dict, save_file)
+            results_dict = {"prompt": obj.text}
+            ########## S3 ##########
             ret = await tokenizer_manager.generate_request(obj, request).__anext__()
+            ########## S3 ##########
+            results_dict["response"] = ret.text
+            ########## S3 ##########
             return ret
         except ValueError as e:
             return ORJSONResponse(

@@ -110,14 +110,14 @@ class UnquantizedFusedMoEMethod(FusedMoEMethodBase, CustomOp):
             topk_group=topk_group,
             num_expert_group=num_expert_group,
             custom_routing_function=custom_routing_function)
-        print(topk_ids.shape)
         
+        ## S3 modified, add topk_ids output
         return fused_experts(hidden_states=x,
                              w1=layer.w13_weight,
                              w2=layer.w2_weight,
                              topk_weights=topk_weights,
                              topk_ids=topk_ids,
-                             inplace=True)
+                             inplace=True), topk_ids
 
     def forward_cpu(self, *args, **kwargs):
         raise NotImplementedError(
@@ -471,8 +471,9 @@ class FusedMoE(torch.nn.Module):
                 router_logits: torch.Tensor):
         assert self.quant_method is not None
 
+        ## S3 modified, add topk_ids output
         # Matrix multiply.
-        final_hidden_states = self.quant_method.apply(
+        final_hidden_states, topk_ids = self.quant_method.apply(
             layer=self,
             x=hidden_states,
             router_logits=router_logits,
@@ -487,7 +488,8 @@ class FusedMoE(torch.nn.Module):
             final_hidden_states = tensor_model_parallel_all_reduce(
                 final_hidden_states)
 
-        return final_hidden_states
+        ## S3 modified, add topk_ids output
+        return final_hidden_states, topk_ids
 
     @classmethod
     def make_expert_params_mapping(
