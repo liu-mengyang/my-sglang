@@ -325,6 +325,7 @@ class MixtralForCausalLM(nn.Module):
         forward_batch: ForwardBatch,
         input_embeds: torch.Tensor = None,
     ) -> torch.Tensor:
+        global results_dict
         idx = len(results_dict) - 2
         results_dict[idx] = {}
         hidden_states, all_router_logits, all_topk_ids = self.model(input_ids, positions, forward_batch, input_embeds, output_router_logits=True)

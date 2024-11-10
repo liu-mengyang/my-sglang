@@ -231,6 +231,7 @@ async def generate_request(obj: GenerateReqInput, request: Request):
     else:
         try:
             ########## S3 ##########
+            global results_dict
             save_logits(results_dict, save_file)
             results_dict = {"prompt": obj.text}
             ########## S3 ##########
