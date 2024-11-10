@@ -110,7 +110,8 @@ class UnquantizedFusedMoEMethod(FusedMoEMethodBase, CustomOp):
             topk_group=topk_group,
             num_expert_group=num_expert_group,
             custom_routing_function=custom_routing_function)
-
+        print(topk_ids.shape)
+        
         return fused_experts(hidden_states=x,
                              w1=layer.w13_weight,
                              w2=layer.w2_weight,
