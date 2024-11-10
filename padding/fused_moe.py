@@ -661,7 +661,7 @@ def fused_moe(
     else:
         topk_weights, topk_ids = custom_routing_function(
             hidden_states, gating_output, topk, renormalize)
-        print(topk_ids.shape)
+    print(topk_ids.shape)
 
     return fused_experts(hidden_states,
                          w1,
