@@ -237,7 +237,8 @@ async def generate_request(obj: GenerateReqInput, request: Request):
             ########## S3 ##########
             ret = await tokenizer_manager.generate_request(obj, request).__anext__()
             ########## S3 ##########
-            results_dict["response"] = ret.text
+            print(ret)
+            # results_dict["response"] = ret.text
             ########## S3 ##########
             return ret
         except ValueError as e:
