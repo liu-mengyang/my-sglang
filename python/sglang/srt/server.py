@@ -86,7 +86,7 @@ from sglang.srt.utils import (
 from sglang.utils import get_exception_traceback
 ########## S3 ##########
 from sglang.srt.global_var import results_dict, save_file
-from sglang.utils import save_logits
+from sglang.srt.utils import save_logits
 ########## S3 ##########
 
 logger = logging.getLogger(__name__)
