@@ -223,6 +223,7 @@ class MixtralDecoderLayer(nn.Module):
             config.hidden_size, eps=config.rms_norm_eps
         )
 
+    ## S3 modified, add topk_ids and router_logitss
     def forward(
         self,
         positions: torch.Tensor,
@@ -244,8 +245,8 @@ class MixtralDecoderLayer(nn.Module):
 
         # Fully Connected
         hidden_states, residual = self.post_attention_layernorm(hidden_states, residual)
-        hidden_states, router_logits = self.block_sparse_moe(hidden_states)
-        return hidden_states, residual, router_logits
+        hidden_states, router_logits, topk_ids = self.block_sparse_moe(hidden_states)
+        return hidden_states, residual, router_logits, topk_ids
 
 
 class MixtralModel(nn.Module):
