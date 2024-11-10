@@ -239,9 +239,9 @@ async def generate_request(obj: GenerateReqInput, request: Request):
             results_dict["response"] = ret['text']
             global response_dict
             results_dict["data"] = response_dict
-            response_dict = {}
             if len(results_dict) != 0:
                 save_logits(results_dict, save_file)
+            response_dict = {}
             results_dict = {}
             ########## S3 ##########
             return ret
