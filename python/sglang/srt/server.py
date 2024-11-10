@@ -232,8 +232,6 @@ async def generate_request(obj: GenerateReqInput, request: Request):
         try:
             ########## S3 ##########
             global results_dict
-            if len(results_dict) != 0:
-                save_logits(results_dict, save_file)
             results_dict["prompt"] = obj.text
             ########## S3 ##########
             ret = await tokenizer_manager.generate_request(obj, request).__anext__()
@@ -242,6 +240,8 @@ async def generate_request(obj: GenerateReqInput, request: Request):
             global response_dict
             results_dict["data"] = response_dict
             response_dict = {}
+            if len(results_dict) != 0:
+                save_logits(results_dict, save_file)
             results_dict = {}
             ########## S3 ##########
             return ret
