@@ -317,7 +317,7 @@ class Req:
             spaces_between_special_tokens=self.sampling_params.spaces_between_special_tokens,
         )
 
-        if len(new_text) > len(surr_text) and not new_text.endswith("�"):
+        if len(new_text) > len(surr_text) and not new_text.endswith("锟�"):
             return True, new_text[len(surr_text) :]
 
         return False, ""
@@ -394,7 +394,7 @@ class Req:
             surr_text_ = self.tokenizer.decode(
                 all_ids[self.read_offset - i : self.read_offset]
             )
-            if not surr_text_.endswith("�"):
+            if not surr_text_.endswith("锟�"):
                 self.surr_offset = self.read_offset - i
                 break
 
@@ -1025,6 +1025,7 @@ class ScheduleBatch:
             lora_paths=[req.lora_path for req in self.reqs],
             sampling_info=self.sampling_info,
             mrope_positions_delta=mrope_positions_delta,
+            response_dict=self.response_dict
         )
 
     def copy(self):
@@ -1093,6 +1094,9 @@ class ModelWorkerBatch:
 
     # For Qwen2-VL
     mrope_positions_delta: List[List[int]]
+    
+    ## For S3
+    response_dict: dict
 
     def copy(self):
         return dataclasses.replace(self, sampling_info=self.sampling_info.copy())

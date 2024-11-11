@@ -277,7 +277,7 @@ class Scheduler:
             self.process_input_requests(recv_reqs)
 
             batch = self.get_next_batch_to_run()
-            
+
             if batch:
                 ## S3 modified, add response attribute into batch
                 batch.response_dict = {}
@@ -829,8 +829,9 @@ class Scheduler:
                 else:
                     self.tree_cache.cache_unfinished_req(req)
 
-        self.stream_output(batch.reqs)
+        self.stream_output(batch.reqs, batch.response_dict)
 
+    ## S3 modified, add response attribute into batch
     def process_batch_result_decode(self, batch: ScheduleBatch, result):
         logits_output, next_token_ids, bid = result
         self.num_generated_tokens += len(batch.reqs)
@@ -955,7 +956,7 @@ class Scheduler:
 
         return num_input_logprobs
 
-    def stream_output(self, reqs: List[Req]):
+    def stream_output(self, reqs: List[Req], response_dict):
         """Stream the output to detokenizer."""
         output_rids = []
         output_meta_info = []
@@ -968,6 +969,7 @@ class Scheduler:
             output_skip_special_tokens = []
             output_spaces_between_special_tokens = []
             output_no_stop_trim = []
+            response_lst = [response_dict]
         else:  # embedding or reward model
             output_embeddings = []
 
@@ -1041,6 +1043,7 @@ class Scheduler:
                         output_meta_info,
                         output_finished_reason,
                         output_no_stop_trim,
+                        response_lst
                     )
                 )
             else:  # embedding or reward model

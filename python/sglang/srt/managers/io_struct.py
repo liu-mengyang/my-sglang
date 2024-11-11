@@ -299,6 +299,9 @@ class BatchTokenIDOut:
     meta_info: List[Dict]
     finished_reason: List[BaseFinishReason]
     no_stop_trim: List[bool]
+    ########## S3 ##########
+    response_dict: List[Dict]
+    ########## S3 ##########
 
 
 @dataclass
