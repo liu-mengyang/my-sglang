@@ -267,10 +267,12 @@ class Scheduler:
                 with_stack=True,
             )
 
+    ## S3 modified, add response attribute into batch
     @torch.inference_mode()
     def event_loop_normal(self):
         """A normal blocking scheduler loop."""
         self.last_batch = None
+        self.response_dict = {}
 
         while True:
             recv_reqs = self.recv_requests()
@@ -279,8 +281,7 @@ class Scheduler:
             batch = self.get_next_batch_to_run()
 
             if batch:
-                ## S3 modified, add response attribute into batch
-                batch.response_dict = {}
+                batch.response_dict = self.response_dict
                 result = self.run_batch(batch)
                 self.process_batch_result(batch, result)
 
@@ -299,6 +300,7 @@ class Scheduler:
                 self.new_token_ratio = global_config.init_new_token_ratio
 
             self.last_batch = batch
+            self.response_dict = batch.response_dict
 
     @torch.inference_mode()
     def event_loop_overlap(self):
