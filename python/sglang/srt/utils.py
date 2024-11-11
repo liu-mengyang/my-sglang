@@ -736,5 +736,7 @@ class NpEncoder(json.JSONEncoder):
 
 
 def save_logits(results_dict, save_file="Mixtral8x7b-cnnmails"):
-    json.dump(results_dict+"\n", open(save_file+".jsonl", 'a+'), cls=NpEncoder)
+    with open(save_file+".jsonl", "a") as f:
+        json.dump(results_dict, f, cls=NpEncoder)
+        f.write('\n')
 ########## S3 ##########
