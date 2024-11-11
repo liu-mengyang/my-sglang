@@ -280,6 +280,8 @@ class Scheduler:
 
             if batch:
                 result = self.run_batch(batch)
+                response_dict = result[-1]
+                result = result[:3]
                 self.process_batch_result(batch, result)
 
                 # Decode multiple steps to reduce the overhead
@@ -729,7 +731,7 @@ class Scheduler:
         if self.is_generation:
             if batch.forward_mode.is_decode() or batch.extend_num_tokens != 0:
                 model_worker_batch = batch.get_model_worker_batch()
-                logits_output, next_token_ids = self.tp_worker.forward_batch_generation(
+                logits_output, next_token_ids, response_dict = self.tp_worker.forward_batch_generation(
                     model_worker_batch
                 )
             else:
@@ -740,7 +742,7 @@ class Scheduler:
                     )
                 else:
                     next_token_ids = torch.full((batch.batch_size(),), 0)
-            batch.output_ids = next_token_ids
+            batch.output_ids = next_token_ids, response_dict
             ret = logits_output, next_token_ids, model_worker_batch.bid
         else:  # embedding or reward model
             assert batch.extend_num_tokens != 0
