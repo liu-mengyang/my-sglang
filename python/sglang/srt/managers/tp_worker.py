@@ -134,11 +134,12 @@ class TpModelWorker:
             self.model_runner.token_to_kv_pool,
         )
 
+    ## S3 modified, output response extraly
     def forward_batch_generation(self, model_worker_batch: ModelWorkerBatch):
         forward_batch = ForwardBatch.init_new(model_worker_batch, self.model_runner)
-        logits_output = self.model_runner.forward(forward_batch)
+        logits_output, response_dict = self.model_runner.forward(forward_batch)
         next_token_ids = self.model_runner.sample(logits_output, model_worker_batch)
-        return logits_output, next_token_ids
+        return logits_output, next_token_ids, response_dict
 
     def forward_batch_embedding(self, model_worker_batch: ModelWorkerBatch):
         forward_batch = ForwardBatch.init_new(model_worker_batch, self.model_runner)

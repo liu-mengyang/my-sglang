@@ -318,7 +318,7 @@ class MixtralForCausalLM(nn.Module):
         self.lm_head = ParallelLMHead(config.vocab_size, config.hidden_size)
         self.logits_processor = LogitsProcessor(config)
 
-    ## S3 modified, save topk_ids and router_logitss
+    ## S3 modified, save topk_ids and router_logits
     def forward(
         self,
         input_ids: torch.Tensor,

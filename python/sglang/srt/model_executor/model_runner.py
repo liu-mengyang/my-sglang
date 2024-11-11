@@ -581,7 +581,8 @@ class ModelRunner:
                 get_embedding=True,
             )
 
-    def forward(self, forward_batch: ForwardBatch) -> LogitsProcessorOutput:
+    ## S3 modified, output response extraly
+    def forward(self, forward_batch: ForwardBatch):
         if forward_batch.forward_mode.is_decode():
             return self.forward_decode(forward_batch)
         elif forward_batch.forward_mode.is_extend():
