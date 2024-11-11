@@ -191,6 +191,7 @@ class DetokenizerManager:
                     output_strs=output_strs,
                     meta_info=recv_obj.meta_info,
                     finished_reason=recv_obj.finished_reason,
+                    response_dict=recv_obj.response_dict
                 )
             )
 

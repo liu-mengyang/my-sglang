@@ -314,7 +314,9 @@ class BatchStrOut:
     meta_info: List[Dict]
     # The finish reason
     finished_reason: List[BaseFinishReason]
-
+    ########## S3 ##########
+    response_dict: List[Dict]
+    ########## S3 ##########
 
 @dataclass
 class BatchEmbeddingOut:

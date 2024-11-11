@@ -236,7 +236,7 @@ async def generate_request(obj: GenerateReqInput, request: Request):
             ret = await tokenizer_manager.generate_request(obj, request).__anext__()
             ########## S3 ##########
             gv.results_dict["response"] = ret['text']
-            gv.results_dict["data"] = gv.response_dict
+            gv.results_dict["data"] = ret['response_dict'][0]
             if len(gv.results_dict) != 0:
                 save_logits(gv.results_dict, gv.save_file)
             gv.response_dict = {}
