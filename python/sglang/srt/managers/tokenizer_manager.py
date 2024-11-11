@@ -619,6 +619,7 @@ class TokenizerManager:
                     out_dict = {
                         "text": recv_obj.output_strs[i],
                         "meta_info": recv_obj.meta_info[i],
+                        "response_dict": recv_obj.response_dict
                     }
                 elif isinstance(recv_obj, BatchTokenIDOut):
                     read_start = 0 if i == 0 else recv_obj.read_offsets[i - 1]
