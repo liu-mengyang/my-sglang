@@ -875,7 +875,7 @@ class Scheduler:
                 if req.top_logprobs_num > 0:
                     req.output_top_logprobs.append(logits_output.output_top_logprobs[i])
 
-        self.stream_output(batch.reqs)
+        self.stream_output(batch.reqs, batch.response_dict)
 
         self.token_to_kv_pool.free_group_end()
 
