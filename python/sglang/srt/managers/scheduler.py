@@ -277,10 +277,10 @@ class Scheduler:
             self.process_input_requests(recv_reqs)
 
             batch = self.get_next_batch_to_run()
-            ## S3 modified, add response attribute into batch
-            batch.response_dict = {}
-
+            
             if batch:
+                ## S3 modified, add response attribute into batch
+                batch.response_dict = {}
                 result = self.run_batch(batch)
                 self.process_batch_result(batch, result)
 
