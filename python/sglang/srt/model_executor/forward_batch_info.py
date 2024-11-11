@@ -127,6 +127,9 @@ class ForwardBatch:
 
     # For Qwen2-VL
     mrope_positions: torch.Tensor = None
+    
+    ## For S3
+    response_dict: Optional[Dict] = None
 
     def compute_mrope_positions(
         self, model_runner: ModelRunner, batch: ModelWorkerBatch
@@ -207,6 +210,7 @@ class ForwardBatch:
             top_logprobs_nums=batch.top_logprobs_nums,
             lora_paths=batch.lora_paths,
             sampling_info=batch.sampling_info,
+            response_dict=batch.response_dict
         )
 
         # Init position information
