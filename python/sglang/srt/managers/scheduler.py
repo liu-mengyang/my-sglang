@@ -280,8 +280,6 @@ class Scheduler:
 
             if batch:
                 result = self.run_batch(batch)
-                response_dict = result[-1]
-                result = result[:3]
                 self.process_batch_result(batch, result)
 
                 # Decode multiple steps to reduce the overhead
@@ -683,6 +681,9 @@ class Scheduler:
             self.running_batch = None
         else:
             new_batch.decoding_reqs = None
+        
+        ## S3 modified, add response attribute into batch
+        new_batch.response_dict = {}
 
         return new_batch
 
@@ -726,6 +727,7 @@ class Scheduler:
         # Update batch tensors
         batch.prepare_for_decode(self.enable_overlap)
 
+    ## S3 modified, add response dict attribute into batch
     def run_batch(self, batch: ScheduleBatch):
         """Run a batch."""
         if self.is_generation:
@@ -742,7 +744,8 @@ class Scheduler:
                     )
                 else:
                     next_token_ids = torch.full((batch.batch_size(),), 0)
-            batch.output_ids = next_token_ids, response_dict
+            batch.output_ids = next_token_ids
+            batch.response_dict = response_dict
             ret = logits_output, next_token_ids, model_worker_batch.bid
         else:  # embedding or reward model
             assert batch.extend_num_tokens != 0

@@ -326,23 +326,25 @@ class MixtralForCausalLM(nn.Module):
         forward_batch: ForwardBatch,
         input_embeds: torch.Tensor = None,
     ) -> torch.Tensor:
-        idx = len(gv.response_dict)
-        gv.response_dict[idx] = {}
+        response_dict = forward_batch.response_dict
+        idx = len(response_dict)
+        response_dict[idx] = {}
         hidden_states, all_router_logits, all_topk_ids = self.model(input_ids, positions, forward_batch, input_embeds, output_router_logits=True)
         save_tokens = copy.deepcopy(input_ids)
-        gv.response_dict[idx]["inputs"] = save_tokens.cpu().data.numpy()
+        response_dict[idx]["inputs"] = save_tokens.cpu().data.numpy()
         save_router_logits = ()
         save_topk_ids = ()
         for router_logits in all_router_logits:
             save_router_logits += (router_logits.cpu().data.float().numpy(),)
         for topk_ids in all_topk_ids:
             save_topk_ids += (topk_ids.cpu().data.float().numpy(),)
-        gv.response_dict[idx]["scores"] = save_router_logits
-        gv.response_dict[idx]["selections"] = save_topk_ids
+        response_dict[idx]["scores"] = save_router_logits
+        response_dict[idx]["selections"] = save_topk_ids
+        forward_batch.response_dict = response_dict
         
         return self.logits_processor(
             input_ids, hidden_states, self.lm_head.weight, forward_batch
-        ), gv.response_dict
+        )
 
     def load_weights(self, weights: Iterable[Tuple[str, torch.Tensor]]):
         stacked_params_mapping = [
