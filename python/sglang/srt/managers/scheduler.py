@@ -284,6 +284,7 @@ class Scheduler:
                 batch.response_dict = self.response_dict
                 result = self.run_batch(batch)
                 self.process_batch_result(batch, result)
+                self.response_dict = batch.response_dict
 
                 # Decode multiple steps to reduce the overhead
                 if batch.forward_mode.is_decode():
@@ -293,14 +294,15 @@ class Scheduler:
                         self.update_running_batch()
                         if not self.running_batch:
                             break
+                        batch.response_dict = self.response_dict
                         result = self.run_batch(batch)
+                        self.response_dict = batch.response_dict
                         self.process_batch_result(batch, result)
             else:
                 self.check_memory()
                 self.new_token_ratio = global_config.init_new_token_ratio
 
             self.last_batch = batch
-            self.response_dict = batch.response_dict
 
     @torch.inference_mode()
     def event_loop_overlap(self):
