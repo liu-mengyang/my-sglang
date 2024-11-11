@@ -239,8 +239,8 @@ async def generate_request(obj: GenerateReqInput, request: Request):
             gv.results_dict["data"] = ret['response_dict'][0]
             if len(gv.results_dict) != 0:
                 save_logits(gv.results_dict, gv.save_file)
-            gv.response_dict = {}
             gv.results_dict = {}
+            ret['response_dict'] = [] # clear for avoid fastapi encoding bug
             ########## S3 ##########
             return ret
         except ValueError as e:
