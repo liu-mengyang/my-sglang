@@ -265,7 +265,8 @@ class TokenizerManager:
                 else:
                     input_ids = obj.input_ids
                     rid = obj.rid[0]
-
+            print(f"Input: {input_text}")
+            
             sampling_params = SamplingParams(**obj.sampling_params[0])
             sampling_params.max_new_tokens = 0
             image_inputs = await self.image_processor.process_images_async(
