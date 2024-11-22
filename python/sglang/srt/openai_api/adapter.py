@@ -71,6 +71,10 @@ from sglang.srt.openai_api.protocol import (
     TopLogprob,
     UsageInfo,
 )
+########## S3 ##########
+import sglang.srt.global_var as gv
+from sglang.srt.utils import save_logits
+########## S3 ##########
 
 logger = logging.getLogger(__name__)
 
@@ -532,6 +536,7 @@ def v1_generate_request(
             sampling_params_list.append(sampling_params)
 
     if len(all_requests) == 1:
+        print("Reqeust length is 1")
         prompt = prompts[0]
         sampling_params_list = sampling_params_list[0]
         logprob_start_lens = logprob_start_lens[0]
@@ -542,10 +547,12 @@ def v1_generate_request(
         else:
             prompt_kwargs = {"input_ids": prompt}
     else:
+        print(f"Reqeust length is {len(prompts)}")
         if isinstance(prompts[0], str):
             prompt_kwargs = {"text": prompts}
         else:
             prompt_kwargs = {"input_ids": prompts}
+    
 
     adapted_request = GenerateReqInput(
         **prompt_kwargs,
@@ -697,8 +704,11 @@ async def v1_completions(tokenizer_manager, raw_request: Request):
     request_json = await raw_request.json()
     all_requests = [CompletionRequest(**request_json)]
     adapted_request, request = v1_generate_request(all_requests)
-
+    ########## S3 ##########
+    gv.results_dict["prompt"] = adapted_request.text
+    ########## S3 ##########
     if adapted_request.stream:
+        print("THis is a streaming request")
 
         async def generate_stream_resp():
             stream_buffers = {}
@@ -841,7 +851,14 @@ async def v1_completions(tokenizer_manager, raw_request: Request):
         ).__anext__()
     except ValueError as e:
         return create_error_response(str(e))
-
+    ########## S3 ##########
+    gv.results_dict["response"] = ret['text']
+    gv.results_dict["data"] = ret['response_dict'][0]
+    if len(gv.results_dict) != 0:
+        save_logits(gv.results_dict, gv.save_file)
+    gv.results_dict = {}
+    ret['response_dict'] = [] # clear for avoid fastapi encoding bug
+    ########## S3 ##########
     if not isinstance(ret, list):
         ret = [ret]
 
