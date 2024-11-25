@@ -90,14 +90,15 @@ class MixtralMoE(nn.Module):
             prefix=f"{prefix}.experts",
         )
 
+    ## S3 modified
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
         # NOTE: hidden_states can have either 1D or 2D shape.
         orig_shape = hidden_states.shape
         hidden_states = hidden_states.view(-1, self.hidden_size)
         # router_logits: (num_tokens, n_experts)
         router_logits, _ = self.gate(hidden_states)
-        final_hidden_states = self.experts(hidden_states, router_logits)
-        return final_hidden_states.view(orig_shape)
+        final_hidden_states, topk_ids = self.experts(hidden_states, router_logits)
+        return final_hidden_states.view(orig_shape), router_logits, topk_ids
 
 
 class MixtralAttention(nn.Module):
@@ -214,6 +215,7 @@ class MixtralDecoderLayer(nn.Module):
             config.hidden_size, eps=config.rms_norm_eps
         )
 
+    ## S3 modified
     def forward(
         self,
         positions: torch.Tensor,
@@ -235,8 +237,8 @@ class MixtralDecoderLayer(nn.Module):
 
         # Fully Connected
         hidden_states, residual = self.post_attention_layernorm(hidden_states, residual)
-        hidden_states = self.block_sparse_moe(hidden_states)
-        return hidden_states, residual
+        hidden_states, router_logits, topk_ids = self.block_sparse_moe(hidden_states)
+        return hidden_states, residual, router_logits, topk_ids
 
 
 class MixtralModel(nn.Module):
@@ -264,13 +266,17 @@ class MixtralModel(nn.Module):
         )
         self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
+    ## S3 modified
     def forward(
         self,
         input_ids: torch.Tensor,
         positions: torch.Tensor,
         forward_batch: ForwardBatch,
         input_embeds: torch.Tensor = None,
+        output_router_logits: Optional[bool] = False,
     ) -> torch.Tensor:
+        all_router_logits = () if output_router_logits else None
+        all_topk_ids = () if output_router_logits else None
         if input_embeds is None:
             hidden_states = self.embed_tokens(input_ids)
         else:
@@ -278,11 +284,14 @@ class MixtralModel(nn.Module):
         residual = None
         for i in range(len(self.layers)):
             layer = self.layers[i]
-            hidden_states, residual = layer(
+            hidden_states, residual, router_logits, topk_ids = layer(
                 positions, hidden_states, forward_batch, residual
             )
+            if output_router_logits:
+                all_router_logits += (router_logits,)
+                all_topk_ids += (topk_ids,)
         hidden_states, _ = self.norm(hidden_states, residual)
-        return hidden_states
+        return hidden_states, all_router_logits, all_topk_ids
 
 
 class MixtralForCausalLM(nn.Module):
@@ -301,6 +310,7 @@ class MixtralForCausalLM(nn.Module):
         self.lm_head = ParallelLMHead(config.vocab_size, config.hidden_size)
         self.logits_processor = LogitsProcessor(config)
 
+    ## S3 modified
     def forward(
         self,
         input_ids: torch.Tensor,
@@ -308,10 +318,17 @@ class MixtralForCausalLM(nn.Module):
         forward_batch: ForwardBatch,
         input_embeds: torch.Tensor = None,
     ) -> torch.Tensor:
-        hidden_states = self.model(input_ids, positions, forward_batch, input_embeds)
+        hidden_states, all_router_logits, all_topk_ids = self.model(input_ids, positions, forward_batch,
+                                   input_embeds, output_router_logits=True)
+        save_router_logits = ()
+        save_topk_ids = ()
+        for router_logits in all_router_logits:
+            save_router_logits += (router_logits.cpu().data.float().numpy(),)
+        for topk_ids in all_topk_ids:
+            save_topk_ids += (topk_ids.cpu().data.float().numpy(),)
         return self.logits_processor(
             input_ids, hidden_states, self.lm_head.weight, forward_batch
-        )
+        ), save_router_logits, save_topk_ids
 
     def load_weights(self, weights: Iterable[Tuple[str, torch.Tensor]]):
         stacked_params_mapping = [

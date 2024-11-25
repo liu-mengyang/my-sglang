@@ -323,7 +323,7 @@ class Req:
             spaces_between_special_tokens=self.sampling_params.spaces_between_special_tokens,
         )
 
-        if len(new_text) > len(surr_text) and not new_text.endswith("�"):
+        if len(new_text) > len(surr_text) and not new_text.endswith("锟�"):
             return True, new_text[len(surr_text) :]
 
         return False, ""
@@ -400,7 +400,7 @@ class Req:
             surr_text_ = self.tokenizer.decode(
                 all_ids[self.read_offset - i : self.read_offset]
             )
-            if not surr_text_.endswith("�"):
+            if not surr_text_.endswith("锟�"):
                 self.surr_offset = self.read_offset - i
                 break
 
@@ -484,6 +484,10 @@ class ScheduleBatch:
 
     # device
     device: str = "cuda"
+
+    # S3 for MoE
+    router_logits:Optional[List[float]] = None
+    topk_ids: Optional[List[int]] = None
 
     @classmethod
     def init_new(

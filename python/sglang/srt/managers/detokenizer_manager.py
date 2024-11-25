@@ -153,7 +153,7 @@ class DetokenizerManager:
                 new_text = read_texts[i][len(surr_texts[i]) :]
                 if recv_obj.finished_reason[i] is None:
                     # Streaming chunk: update the decode status
-                    if len(new_text) > 0 and not new_text.endswith("�"):
+                    if len(new_text) > 0 and not new_text.endswith("锟�"):
                         s.decoded_text = s.decoded_text + new_text
                         s.surr_offset = s.read_offset
                         s.read_offset = len(s.decode_ids)

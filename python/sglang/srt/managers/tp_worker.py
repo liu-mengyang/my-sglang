@@ -139,6 +139,7 @@ class TpModelWorker:
         forward_batch = ForwardBatch.init_new(model_worker_batch, self.model_runner)
         self.model_runner.forward(forward_batch)
 
+    ## S3 modified
     def forward_batch_generation(
         self,
         model_worker_batch: ModelWorkerBatch,
@@ -146,10 +147,14 @@ class TpModelWorker:
     ):
         forward_batch = ForwardBatch.init_new(model_worker_batch, self.model_runner)
         logits_output = self.model_runner.forward(forward_batch)
+        if isinstance(logits_output, tuple):
+            router_logits = logits_output[1]
+            topk_ids = logits_output[2]
+            logits_output = logits_output[0]
         if launch_done:
             launch_done.set()
         next_token_ids = self.model_runner.sample(logits_output, model_worker_batch)
-        return logits_output, next_token_ids
+        return logits_output, next_token_ids, router_logits, topk_ids
 
     def forward_batch_embedding(self, model_worker_batch: ModelWorkerBatch):
         forward_batch = ForwardBatch.init_new(model_worker_batch, self.model_runner)

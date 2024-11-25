@@ -80,6 +80,7 @@ from sglang.srt.utils import (
     suppress_other_loggers,
 )
 from sglang.utils import get_exception_traceback
+from sglang.srt.managers.s3_utils import save_logits
 
 logger = logging.getLogger(__name__)
 
@@ -358,6 +359,11 @@ class Scheduler:
     @torch.no_grad()
     def event_loop_normal(self):
         """A normal scheduler loop."""
+        cur_mode = None
+        req_states = {}
+        step_states = {}
+        cur_req_id = 0
+        cur_step_id = 0
         while True:
             recv_reqs = self.recv_requests()
             self.process_input_requests(recv_reqs)
@@ -367,10 +373,43 @@ class Scheduler:
                 batch = self.prepare_dp_attn_batch(batch)
 
             self.cur_batch = batch
-
+            # TODO: [S3] extending to batch with > 1 batch size
             if batch:
+                
+                # print(self.forward_ct)
+                # print(batch.forward_mode)
                 result = self.run_batch(batch)
+                router_logits = result[-2]
+                topk_ids = result[-1]
+                result = result[:-2]
                 self.process_batch_result(batch, result)
+                # print(batch.input_ids)
+                # print(batch.seq_lens)
+                # print(batch.output_ids)
+                # print(batch.reqs[0].origin_input_text)
+                # print(batch.reqs[0].output_ids)
+                # print(batch.reqs[0].decoded_text)
+                if cur_mode is None:
+                    cur_mode = batch.forward_mode
+                    req_states["Req_id"] = 0
+                elif batch.forward_mode == ForwardMode.EXTEND:
+                    # the previsous batch is finished, update sequence states
+                    # req_states["Output"]
+                    cur_req_id += 1
+                    req_states["Req_id"] = cur_req_id
+                    req_states["Input_text"] = batch.reqs[0].origin_input_text
+                    cur_step_id = 0
+                elif batch.forward_mode == ForwardMode.DECODE:
+                    # update step states for each step
+                    pass
+                step_states["Req_id"] = req_states["Req_id"]
+                step_states["Inp_id"] = cur_step_id
+                step_states["Inp"] = batch.input_ids
+                step_states["Out"] = batch.output_ids
+                step_states["scores"] = router_logits
+                step_states["activation"] = topk_ids
+                save_logits(step_states, save_name="test")
+                cur_step_id += 1
             else:
                 # Self-check and re-init some states when the server is idle
                 self.check_memory()
@@ -908,6 +947,7 @@ class Scheduler:
         # Update batch tensors
         batch.prepare_for_decode(self.enable_overlap)
 
+    ## S3 modified
     def run_batch(self, batch: ScheduleBatch):
         """Run a batch."""
         self.forward_ct += 1
@@ -915,7 +955,7 @@ class Scheduler:
         if self.is_generation:
             model_worker_batch = batch.get_model_worker_batch()
             if batch.forward_mode.is_decode() or batch.extend_num_tokens != 0:
-                logits_output, next_token_ids = self.tp_worker.forward_batch_generation(
+                logits_output, next_token_ids, router_logits, topk_ids = self.tp_worker.forward_batch_generation(
                     model_worker_batch
                 )
             elif batch.forward_mode.is_idle():
@@ -931,7 +971,7 @@ class Scheduler:
                 else:
                     next_token_ids = torch.full((batch.batch_size(),), 0)
             batch.output_ids = next_token_ids
-            ret = logits_output, next_token_ids, model_worker_batch.bid
+            ret = logits_output, next_token_ids, model_worker_batch.bid, router_logits, topk_ids
         else:  # embedding or reward model
             assert batch.extend_num_tokens != 0
             model_worker_batch = batch.get_model_worker_batch()
