@@ -16,7 +16,7 @@ def summarize(s, article):
 
 
 def main():
-    dataset = load_dataset("EdinburghNLP/xsum")
+    dataset = load_dataset("EdinburghNLP/xsum", split='test')
     runtime = sgl.Runtime(model_path="/models/Mixtral-8x7B-Instruct-v0.1",
                           disable_overlap_schedule=True,
                           tp_size=8,
