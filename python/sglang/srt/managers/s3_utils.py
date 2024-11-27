@@ -20,7 +20,7 @@ class NpEncoder(json.JSONEncoder):
 def save_logits(logits_dict, save_name):
     # Inp
     output_path = f"outputs/{save_name}_{logits_dict['Req_id']}_{logits_dict['Inp_id']}.safetensors"
-    os.makedirs(output_path, exist_ok=True)
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     save_dict = {}
     save_dict["Inp"] = logits_dict["Inp"].cpu()
     save_dict["Out"] = logits_dict["Out"].cpu()
