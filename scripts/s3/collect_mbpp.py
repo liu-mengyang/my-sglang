@@ -15,14 +15,14 @@ def coding(s, prompt):
 
 
 def main():
-    dataset = load_dataset("openai/openai_humaneval", split='test')
+    dataset = load_dataset("google-research-datasets/mbpp", split='test')
     runtime = sgl.Runtime(model_path="/models/Mixtral-8x7B-Instruct-v0.1",
                           disable_overlap_schedule=True,
                           tp_size=8,
                           disable_cuda_graph=True)
     sgl.set_default_backend(runtime)
 
-    for id, code in tqdm(enumerate(dataset["prompt"])):
+    for id, code in tqdm(enumerate(dataset["text"])):
         state = coding.run(code)
         input_text = None
         output_text = None
@@ -35,7 +35,7 @@ def main():
         assert input_text is not None and output_text is not None
         save_results({
             "Input_text": input_text,
-            "Output_text": output_text}, "humaneval")
+            "Output_text": output_text}, "mbpp")
 
     # print(state["result"])
 

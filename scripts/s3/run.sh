@@ -1,0 +1,2 @@
+python3 collect_humaneval.py
+python3 collect_mbpp.py
