@@ -26,5 +26,7 @@ cp vllm_padding/fused_moe.py ./vllm/vllm/model_executor/layers/fused_moe/fused_m
 cp vllm_padding/layer.py ./vllm/vllm/model_executor/layers/fused_moe/layer.py
 
 ## Start to collect
+pip install safetensors
 python3 collect_xsum.py
+python3 collect_humaneval.py
 ```
