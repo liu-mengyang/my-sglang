@@ -1,5 +1,4 @@
 import os
-import openai
 
 from datasets import load_dataset, load_from_disk
 import sglang as sgl
@@ -27,6 +26,10 @@ def main():
         os.makedirs("./datasets", exist_ok=True)
         dataset.save_to_disk(local_dataset_path)
         print(f"Dataset saved to {local_dataset_path}")
+
+
+def main():
+    dataset = load_dataset("google-research-datasets/mbpp", split='test')
     runtime = sgl.Runtime(model_path="/models/Mixtral-8x7B-Instruct-v0.1",
                           disable_overlap_schedule=True,
                           tp_size=8,
