@@ -36,7 +36,7 @@ def main():
                           disable_cuda_graph=True)
     sgl.set_default_backend(runtime)
     
-    for id, question in tqdm(enumerate(dataset["question"])):
+    for id, question in tqdm(enumerate(dataset["test"]["question"])):
         state = qa.run(question)
         input_text = None
         output_text = None
