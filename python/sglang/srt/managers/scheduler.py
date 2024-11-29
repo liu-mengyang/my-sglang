@@ -86,7 +86,7 @@ logger = logging.getLogger(__name__)
 
 # Test retract decode
 test_retract = os.getenv("SGLANG_TEST_RETRACT", "false") == "true"
-
+dataset_name = os.getenv("S3_DATASET_NAME", "s3_logits")
 
 class Scheduler:
     """A scheduler that manages a tensor parallel GPU worker."""
@@ -408,7 +408,7 @@ class Scheduler:
                 step_states["Out"] = batch.output_ids
                 step_states["scores"] = router_logits
                 step_states["activation"] = topk_ids
-                save_logits(step_states, save_name="test")
+                save_logits(step_states, save_name=dataset_name)
                 cur_step_id += 1
             else:
                 # Self-check and re-init some states when the server is idle

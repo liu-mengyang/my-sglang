@@ -6,15 +6,17 @@ from sglang import function, system, user, assistant, gen
 from sglang.srt.managers.s3_utils import save_results
 from tqdm import tqdm
 
+hf_url = "https://huggingface.co/datasets/cais/mmlu"
+os.environ["S3_DATASET_NAME"] = "mmlu"
 
-hf_url = "https://huggingface.co/datasets/openai/openai_humaneval"
-os.environ["S3_DATASET_NAME"] = "humaneval"
 
 @function
-def coding(s, prompt):
-    s += system("You are a helpful code assistant that help with writing Python code for a user request.")
+def qa(s, prompt):
+    s += system("You are a knowledge expert, you are supposed to answer the \
+        multi-choice question to derive your final answer as \
+        'The answer is...'.")
     s += user(prompt)
-    s += assistant(gen("code", max_tokens=256))
+    s += assistant(gen("question", max_tokens=256))
 
 
 def main():
@@ -23,19 +25,19 @@ def main():
         dataset = load_from_disk(local_dataset_path)
     except:
         print("Local dataset not found, downloading from HuggingFace...")
-        dataset = load_dataset("openai/openai_humaneval", split='test')
+        dataset = load_dataset("cais/mmlu", 'all')
         os.makedirs("./datasets", exist_ok=True)
         dataset.save_to_disk(local_dataset_path)
         print(f"Dataset saved to {local_dataset_path}")
-
+    
     runtime = sgl.Runtime(model_path="/models/Mixtral-8x7B-Instruct-v0.1",
                           disable_overlap_schedule=True,
                           tp_size=8,
                           disable_cuda_graph=True)
     sgl.set_default_backend(runtime)
-
-    for id, code in tqdm(enumerate(dataset["prompt"])):
-        state = coding.run(code)
+    
+    for id, question in tqdm(enumerate(dataset["question"])):
+        state = qa.run(question)
         input_text = None
         output_text = None
         for m in state.messages():
@@ -47,9 +49,9 @@ def main():
         assert input_text is not None and output_text is not None
         save_results({
             "Input_text": input_text,
-            "Output_text": output_text}, "test")
-
+            "Output_text": output_text}, "humaneval")
     # print(state["result"])
+
 
 if __name__ == "__main__":
     main()

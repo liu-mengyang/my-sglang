@@ -1,10 +1,14 @@
-import openai
+import os
 
-from datasets import load_dataset
+from datasets import load_dataset, load_from_disk
 import sglang as sgl
 from sglang import function, system, user, assistant, gen
 from sglang.srt.managers.s3_utils import save_results
 from tqdm import tqdm
+
+
+hf_url = "https://huggingface.co/datasets/EdinburghNLP/xsum"
+os.environ["S3_DATASET_NAME"] = "xsum"
 
 
 @function
@@ -16,7 +20,16 @@ def summarize(s, article):
 
 
 def main():
-    dataset = load_dataset("EdinburghNLP/xsum", split='test')
+    local_dataset_path = "./datasets/"+ os.getenv("S3_DATASET_NAME", "other")
+    try:
+        dataset = load_from_disk(local_dataset_path)
+    except:
+        print("Local dataset not found, downloading from HuggingFace...")
+        dataset = load_dataset("EdinburghNLP/xsum")
+        os.makedirs("./datasets", exist_ok=True)
+        dataset.save_to_disk(local_dataset_path)
+        print(f"Dataset saved to {local_dataset_path}")
+
     runtime = sgl.Runtime(model_path="/models/Mixtral-8x7B-Instruct-v0.1",
                           disable_overlap_schedule=True,
                           tp_size=8,
