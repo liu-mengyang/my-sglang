@@ -47,7 +47,7 @@ def main():
         assert input_text is not None and output_text is not None
         save_results({
             "Input_text": input_text,
-            "Output_text": output_text}, "test")
+            "Output_text": output_text}, os.getenv("S3_DATASET_NAME"))
 
     # print(state["result"])
 
