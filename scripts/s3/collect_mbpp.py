@@ -27,9 +27,6 @@ def main():
         dataset.save_to_disk(local_dataset_path)
         print(f"Dataset saved to {local_dataset_path}")
 
-
-def main():
-    dataset = load_dataset("google-research-datasets/mbpp", split='test')
     runtime = sgl.Runtime(model_path="/models/Mixtral-8x7B-Instruct-v0.1",
                           disable_overlap_schedule=True,
                           tp_size=8,

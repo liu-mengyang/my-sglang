@@ -10,7 +10,6 @@ import pickle
 # for initializing the database
 def init_logits_db(db_name="s3_logits.db"):
     """Initialize SQLite database for logits"""
-    os.makedirs(os.path.dirname(db_name), exist_ok=True)
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
     cursor.execute('''
