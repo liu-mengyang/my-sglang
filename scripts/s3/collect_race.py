@@ -39,9 +39,10 @@ def main():
                           tp_size=8,
                           disable_cuda_graph=True)
     sgl.set_default_backend(runtime)
-    for id, article in tqdm(enumerate(dataset["question"])):
+    for id, article in tqdm(enumerate(dataset["test"]["article"])):
         # print(f"Summarizing Article {id}")
-        state = qa.run(article)
+        question = dataset["test"]["question"]
+        state = qa.run(article+question)
         input_text = None
         output_text = None
         for m in state.messages():
